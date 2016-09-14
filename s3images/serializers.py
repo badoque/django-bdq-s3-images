@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from image_management.models import ExternalImage
+from .models import ExternalImage
 
 class ExternalImageSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)

@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from image_management.models import ExternalImage
-from image_management.models import ProcessedImage
+from .models import ExternalImage
+from .models import ProcessedImage
 
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect

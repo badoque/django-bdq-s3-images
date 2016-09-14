@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
-from image_management.views import *
+from .views import *
 
 urlpatterns = patterns('',
 

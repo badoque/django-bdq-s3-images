@@ -1,5 +1,5 @@
 from django.db import models
-from image_management.utils import *
+from .utils import *
 
 # Create your models here.
 class ExternalImage(models.Model):
