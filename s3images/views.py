@@ -42,7 +42,7 @@ class ExternalImageUploadUrlSign(APIView):
         mime_type = request.GET.get('s3_object_type')
         
         path, new_filename = self.generate_full_path(object_name)
-        expires = (datetime.datetime.utcnow()+datetime.timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        expires = (datetime.datetime.utcnow()+datetime.timedelta(seconds=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         policy = json.dumps({
             "expiration": expires,
