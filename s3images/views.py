@@ -112,7 +112,7 @@ class PutExternalImageUploadUrlSign(APIView):
                 string_to_sign.encode('utf-8'),
                 sha1
             ).digest()).decode('utf-8')
-        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + AWSSignature
+        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + aws_signature
                 
         return Response({
                 'aws_auth_header': aws_auth_header,
