@@ -76,6 +76,54 @@ class ExternalImageUploadUrlSign(APIView):
     def get(self, request):
         return self.sign_url(request)
 
+class PutExternalImageUploadUrlSign(APIView):
+
+    def generate_full_path(self, original_filename):
+        from uuid import uuid4
+
+        ext = original_filename.split('.')[-1]
+        new_filename = "%s.%s" % (uuid4(), ext)
+        while ExternalImage.objects.filter(url__iendswith=new_filename).count() != 0:
+            new_filename = "%s.%s" % (uuid4(), ext)
+
+        return ("general_images/%s" % (new_filename), new_filename)
+
+    def sign_url(self, request):
+        import urllib
+        import base64
+        import hmac
+        from hashlib import sha1
+        import time
+        from django.http import JsonResponse
+        from django.conf import settings
+        import datetime
+        import json
+
+        object_name = request.GET.get('s3_object_name')
+        mime_type = request.GET.get('s3_object_type')
+        expires = (datetime.datetime.utcnow()+datetime.timedelta(seconds=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        path, new_filename = self.generate_full_path(object_name)
+
+        string_to_sign = 'PUT\n\n%s\n%s\n/%s%s%s' % (mime_type, expires, bucket, path, new_filename)
+
+        aws_signature = base64.b64encode(hmac.new(
+                bytes('AWS ' + settings.AWS_SECRET_ACCESS_KEY, 'utf-8'), 
+                string_to_sign.encode('utf-8'),
+                sha1
+            ).digest()).decode('utf-8')
+        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + AWSSignature
+                
+        return Response({
+                'aws_auth_header': aws_auth_header,
+                'expires': expires,
+                'path': path,
+                'file_name': new_filename,
+            }, status=status.HTTP_200_OK)
+
+    def get(self, request):
+        return self.sign_url(request)
+
 
 # Redirects client to an image on Amazon S3 given a valid image ID
 # Params (optional):
