@@ -112,7 +112,7 @@ class PutExternalImageUploadUrlSign(APIView):
                 string_to_sign.encode('utf-8'),
                 sha1
             ).digest()).decode('utf-8')
-        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + aws_signature
+        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + ':' + aws_signature
                 
         return Response({
                 'aws_auth_header': aws_auth_header,
@@ -124,6 +124,46 @@ class PutExternalImageUploadUrlSign(APIView):
     def get(self, request):
         return self.sign_url(request)
 
+
+class HerokuExternalImageUploadUrlSign(APIView):
+
+    def generate_full_path(self, original_filename):
+        from uuid import uuid4
+
+        ext = original_filename.split('.')[-1]
+        new_filename = "%s.%s" % (uuid4(), ext)
+        while ExternalImage.objects.filter(url__iendswith=new_filename).count() != 0:
+            new_filename = "%s.%s" % (uuid4(), ext)
+
+        return ("general_images/%s" % (new_filename), new_filename)
+
+    def sign_url(self, request):
+        import boto3
+
+        object_name = request.GET.get('s3_object_name')
+        mime_type = request.GET.get('s3_object_type')
+
+        s3 = boto3.client('s3')
+
+        presigned_post = s3.generate_presigned_post(
+            Bucket = settings.AWS_STORAGE_BUCKET_NAME,
+            Key = object_name,
+            Fields = {"acl": "public-read", "Content-Type": mime_type},
+            Conditions = [
+                {"acl": "public-read"},
+                {"Content-Type": mime_type}
+            ],
+            ExpiresIn = 3600
+        )
+
+                
+        return Response({
+            'data': presigned_post,
+            'url': 'https://%s.s3.amazonaws.com/%s' % (settings.AWS_STORAGE_BUCKET_NAME, object_name)
+        }, status=status.HTTP_200_OK)
+
+    def get(self, request):
+        return self.sign_url(request)
 
 # Redirects client to an image on Amazon S3 given a valid image ID
 # Params (optional):
