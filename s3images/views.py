@@ -105,7 +105,7 @@ class PutExternalImageUploadUrlSign(APIView):
         bucket = settings.AWS_STORAGE_BUCKET_NAME
         path, new_filename = self.generate_full_path(object_name)
 
-        string_to_sign = 'PUT\n\n%s\n%s\n/%s/%s' % (mime_type, expires, bucket, path)
+        string_to_sign = 'PUT\n\n%s\n%s\nx-amz-acl:public-read\n/%s/%s' % (mime_type, expires, bucket, path)
 
         print(string_to_sign)
 
