@@ -110,10 +110,10 @@ class PutExternalImageUploadUrlSign(APIView):
         print(string_to_sign)
 
         aws_signature = base64.b64encode(hmac.new(
-                'AWS ' + settings.AWS_SECRET_ACCESS_KEY, 
+                bytes('AWS ' + settings.AWS_SECRET_ACCESS_KEY, 'utf-8'), 
                 string_to_sign,
                 sha1
-            ).digest())
+            ).digest()).decode('utf-8')
         aws_auth_header = 'AWS ' + settings.AWS_ACCESS_KEY_ID + ':' + aws_signature
                 
         return Response({
