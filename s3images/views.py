@@ -102,7 +102,6 @@ class PutExternalImageUploadUrlSign(APIView):
         object_name = request.GET.get('s3_object_name')
         mime_type = request.GET.get('s3_object_type')
         expires = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S") + ' GMT'
-        expires = 'Fri, 07 Oct 2016 14:17:41 GMT'
         bucket = settings.AWS_STORAGE_BUCKET_NAME
         path, new_filename = self.generate_full_path(object_name)
 
@@ -113,7 +112,7 @@ class PutExternalImageUploadUrlSign(APIView):
                 string_to_sign.encode('utf-8'),
                 sha1
             ).digest()).decode('utf-8')
-        aws_auth_header = 'AWS ' + settings.AWS_SECRET_ACCESS_KEY + ':' + aws_signature
+        aws_auth_header = 'AWS ' + settings.AWS_ACCESS_KEY_ID + ':' + aws_signature
                 
         return Response({
                 'aws_auth_header': aws_auth_header,
