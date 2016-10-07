@@ -139,6 +139,7 @@ class HerokuExternalImageUploadUrlSign(APIView):
 
     def sign_url(self, request):
         import boto3
+        from django.conf import settings
 
         object_name = request.GET.get('s3_object_name')
         mime_type = request.GET.get('s3_object_type')
