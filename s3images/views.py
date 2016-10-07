@@ -86,7 +86,7 @@ class PutExternalImageUploadUrlSign(APIView):
         while ExternalImage.objects.filter(url__iendswith=new_filename).count() != 0:
             new_filename = "%s.%s" % (uuid4(), ext)
 
-        return ("general_images/%s" % (new_filename), new_filename)
+        return ("general_images/%s" % (new_filename,), new_filename)
 
     def sign_url(self, request):
         import urllib
@@ -105,7 +105,7 @@ class PutExternalImageUploadUrlSign(APIView):
         bucket = settings.AWS_STORAGE_BUCKET_NAME
         path, new_filename = self.generate_full_path(object_name)
 
-        string_to_sign = 'PUT\n\n%s\n%s\n/%s%s%s' % (mime_type, expires, bucket, path, new_filename)
+        string_to_sign = 'PUT\n\n%s\n%s\n/%s/%s' % (mime_type, expires, bucket, path)
 
         aws_signature = base64.b64encode(hmac.new(
                 bytes('AWS ' + settings.AWS_SECRET_ACCESS_KEY, 'utf-8'), 
@@ -138,30 +138,43 @@ class HerokuExternalImageUploadUrlSign(APIView):
         return ("general_images/%s" % (new_filename), new_filename)
 
     def sign_url(self, request):
-        import boto3
+        import urllib
+        import base64
+        import hmac
+        from hashlib import sha1
+        import time
+        from django.http import JsonResponse
         from django.conf import settings
+        import datetime
+        import json
 
         object_name = request.GET.get('s3_object_name')
         mime_type = request.GET.get('s3_object_type')
+        
+        path, new_filename = self.generate_full_path(object_name)
+        expires = (datetime.datetime.utcnow()+datetime.timedelta(seconds=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        s3 = boto3.client('s3')
-
-        presigned_post = s3.generate_presigned_post(
-            Bucket = settings.AWS_STORAGE_BUCKET_NAME,
-            Key = object_name,
-            Fields = {"acl": "public-read", "Content-Type": mime_type},
-            Conditions = [
+        policy = json.dumps({
+            "expiration": expires,
+            "conditions": [
+                {"bucket": settings.AWS_STORAGE_BUCKET_NAME},
+                ["starts-with", "$key", path[0:len(path) - len(new_filename)]],
                 {"acl": "public-read"},
-                {"Content-Type": mime_type}
-            ],
-            ExpiresIn = 3600
-        )
+                ["eq", "$Content-Type", mime_type],
+                ["eq", "$filename", new_filename]
+            ]
+        })
+        
 
-                
+        encoded_policy = base64.b64encode(policy.encode('utf-8')) # Here we base64 encode a UTF-8 version of our policy.  Make sure there are no new lines, Amazon doesn't like them.    
+        signature = base64.b64encode(hmac.new(bytes(settings.AWS_SECRET_ACCESS_KEY, 'utf-8'), encoded_policy, sha1).digest()).decode('utf-8')
+        
+        url = 'https://%s.s3.amazonaws.com' % settings.AWS_STORAGE_BUCKET_NAME
+        
         return Response({
-            'data': presigned_post,
-            'url': 'https://%s.s3.amazonaws.com/%s' % (settings.AWS_STORAGE_BUCKET_NAME, object_name)
-        }, status=status.HTTP_200_OK)
+                'url': '%s/%s?AWSAccessKeyId=%s&Expires=%s&signature=%s' % (url, path , settings.AWS_ACCESS_KEY_ID, expires, signature),
+                'data': policy
+            }, status=status.HTTP_200_OK)
 
     def get(self, request):
         return self.sign_url(request)
