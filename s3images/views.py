@@ -119,6 +119,7 @@ class PutExternalImageUploadUrlSign(APIView):
         return Response({
                 'aws_auth_header': aws_auth_header,
                 'expires': expires,
+                'aws_bucket_url': 'https://%s.s3.amazonaws.com' % settings.AWS_STORAGE_BUCKET_NAME,
                 'path': path,
                 'file_name': new_filename,
             }, status=status.HTTP_200_OK)
