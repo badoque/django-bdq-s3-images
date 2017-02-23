@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='ExternalImage',
-            name='size'
+            name='size',
             field=models.IntegerField(blank=True, null=True),
         ),
     ]
