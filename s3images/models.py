@@ -5,7 +5,7 @@ from .utils import *
 class ExternalImage(models.Model):
     url = models.TextField()
     type = models.CharField(max_length=60)
-    size = models.IntegerField()
+    size = models.IntegerField(blank=True, null=True)
 
     def _get_path_to_save(self):
         # Return path to save image
