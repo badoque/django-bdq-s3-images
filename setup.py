@@ -12,9 +12,8 @@ package = 's3images'
 
 requirements = [
     'Django>=1.7',
-    'celery==3.1.23',
-    'django-celery==3.1.17',
-    'Pillow==3.2.0',
+    'celery>=3.1.23',
+    'Pillow>=3.2.0',
 ]
 
 
